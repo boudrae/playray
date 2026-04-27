@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAYRAY - Live Stream</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+--bg-color: #0b0f1a;
+--card-bg: #1e2533;
+--text-primary: #ffffff;
+--text-secondary: #94a3b8;
+--header-bg: #0b0f1a;
+--accent-gradient: linear-gradient(90deg, #ff4d4d, #f9cb28, #20e3b2, #00d2ff);
+--card-shadow: 0 4px 20px rgba(0,0,0,0.3);
+--pill-bg: #2d3748;
+--pill-active: #ffffff;
+--pill-text-active: #000;
+--header-border: rgba(255, 255, 255, 0.1);
+--live-glow: rgba(255, 77, 77, 0.4);
+--toggle-bg: #1e2533;
+--player-bg: radial-gradient(circle, #1a1a1c 0%, #000000 100%);
+--match-bar-bg: #161b26;
+}
+[data-theme="light"] {
+        --bg-color: #f1f5f9;
+        --card-bg: #ffffff;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --header-bg: #ef4444; 
+        --pill-bg: #e2e8f0;
+        --pill-active: #1e293b;
+        --pill-text-active: #ffffff;
+        --card-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        --header-border: rgba(255, 255, 255, 0.2);
+        --live-glow: rgba(239, 68, 68, 0.2);
+        --toggle-bg: #cbd5e1;
+        --player-bg: #000;
+        --match-bar-bg: #ffffff;
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        padding-bottom: 50px;
+    }
+
+    /* HEADER */
+    header {
+        background-color: var(--header-bg);
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        border-bottom: 1px solid var(--header-border);
+    }
+
+    .logo { 
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 24px; 
+        font-weight: 800; 
+        letter-spacing: 2px; 
+        color: white; 
+    }
+
+    .theme-switch-wrapper { display: flex; align-items: center; }
+    .theme-switch { display: inline-block; height: 30px; position: relative; width: 60px; }
+    .theme-switch input { display: none; }
+    .slider {
+        background-color: var(--toggle-bg);
+        bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0;
+        transition: .4s; border-radius: 34px;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0 6px; border: 1px solid var(--header-border);
+    }
+    .slider i { font-size: 14px; z-index: 1; pointer-events: none; }
+    .fa-sun { color: #f9cb28; opacity: 0; transition: 0.3s; }
+    .fa-moon { color: #f1f5f9; opacity: 1; transition: 0.3s; }
+    input:checked + .slider:before { transform: translateX(30px); }
+    input:checked + .slider .fa-sun { opacity: 1; }
+    input:checked + .slider .fa-moon { opacity: 0; }
+    .slider:before {
+        background-color: #fff; bottom: 3px; content: ""; height: 22px; left: 4px;
+        position: absolute; transition: .4s; width: 22px; border-radius: 50%;
+        z-index: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .search-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
+
+    /* MATCH INFO BAR */
+    .match-info-bar {
+        background: var(--match-bar-bg);
+        padding: 15px 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        border-bottom: 1px solid var(--header-border);
+        box-shadow: var(--card-shadow);
+    }
+    .bar-team { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14px; }
+    .bar-team img { width: 30px; height: 30px; object-fit: contain; }
+    .bar-status {
+        background: #ff0000;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        animation: pulse 2s infinite;
+    }
+
+    /* PLAYER STYLING */
+    .player-section {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 0 20px;
+    }
+    .player-container {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background: var(--player-bg);
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        border: 1px solid var(--header-border);
+        cursor: pointer; /* FIXED: FULL PLAYER CLICKABLE */
+    }
+    .ui-layer {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 5;
+        background: rgba(0,0,0,0.4);
+        text-align: center;
+        pointer-events: none; /* Let clicks pass to container */
+    }
+    .play-icon {
+        width: 80px;
+        height: 80px;
+        background: #ff0000;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 0 30px rgba(255,0,0,0.3);
+    }
+    .player-container:hover .play-icon { transform: scale(1.1); box-shadow: 0 0 40px rgba(255,0,0,0.5); }
+    
+    /* FIXED: PERFECT CENTER ALIGNMENT */
+    .play-icon svg { 
+        fill: white; 
+        width: 35px; 
+        height: 35px; 
+        margin-left: 5px; /* Optical adjustment for triangle weight */
+    }
+    
+    .status-text { margin-top: 15px; font-size: 16px; font-weight: 500; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+    
+    .progress-container {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: rgba(255,255,255,0.1);
+        z-index: 20;
+        display: none;
+    }
+    .progress-fill { height: 100%; width: 0%; background: #ff0000; transition: width 0.1s linear; }
+
+    #locker-modal {
+        display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+        z-index: 10000; justify-content: center; align-items: center;
+    }
+
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+</style>
+</head>
+<body>
+<header>
+    <div class="theme-switch-wrapper">
+        <label class="theme-switch">
+            <input type="checkbox" id="theme-toggle">
+            <span class="slider">
+                <i class="fa-solid fa-moon"></i>
+                <i class="fa-solid fa-sun"></i>
+            </span>
+        </label>
+    </div>
+    <div class="logo">PLAYRAY</div>
+    <button class="search-btn"><i class="fa-solid fa-magnifying-glass"></i></button>
+</header>
+
+<div class="match-info-bar" id="match-bar">
+    <!-- Dynamic Content -->
+</div>
+
+<section class="player-section">
+    <div class="player-container" onclick="startStream()">
+        <div class="ui-layer" id="player-ui">
+            <div class="play-icon">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+            <div class="status-text" id="status-label">Tap to start live stream</div>
+        </div>
+        <div class="progress-container" id="p-wrap">
+            <div class="progress-fill" id="p-bar"></div>
+        </div>
+    </div>
+</section>
+
+<div id="locker-modal"></div>
+
+<script>
+    // THEME ENGINE
+    const themeToggle = document.getElementById('theme-toggle');
+    function setTheme(mode) {
+        document.documentElement.setAttribute('data-theme', mode);
+        themeToggle.checked = (mode === 'light');
+        localStorage.setItem('playray-theme', mode);
+    }
+
+    const savedTheme = localStorage.getItem('playray-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    setTheme(savedTheme || (prefersDark.matches ? 'dark' : 'light'));
+    themeToggle.addEventListener('change', () => setTheme(themeToggle.checked ? 'light' : 'dark'));
+
+    // DYNAMIC URL LOGIC
+    function initDynamicMatch() {
+        const params = new URLSearchParams(window.location.search);
+        
+        const match = {
+            team1: params.get('t1') || "Team A",
+            team2: params.get('t2') || "Team B",
+            logo1: params.get('l1') || "https://loodibee.com/wp-content/uploads/nba-logo.png",
+            logo2: params.get('l2') || "https://loodibee.com/wp-content/uploads/nba-logo.png",
+            live: params.get('live') === 'true'
+        };
+
+        // Update Match Info Bar
+        document.getElementById('match-bar').innerHTML = `
+            <div class="bar-team"><img src="${match.logo1}"> <span>${match.team1}</span></div>
+            <div class="bar-status">${match.live ? '• LIVE' : 'UPCOMING'}</div>
+            <div class="bar-team"><span>${match.team2}</span> <img src="${match.logo2}"></div>
+        `;
+        
+        document.title = `${match.team1} vs ${match.team2} - PLAYRAY`;
+    }
+
+    // STREAMING LOGIC
+    let isBuffering = false;
+    function startStream() {
+        if(isBuffering) return;
+        isBuffering = true;
+
+        document.getElementById("player-ui").style.opacity = "0.8";
+        document.querySelector(".play-icon").style.display = "none";
+        
+        const statusLabel = document.getElementById("status-label");
+        const wrap = document.getElementById("p-wrap");
+        const bar = document.getElementById("p-bar");
+        wrap.style.display = "block";
+
+        let width = 0;
+        let timer = setInterval(function() {
+            width += 2;
+            bar.style.width = width + "%";
+
+            if (width < 40) statusLabel.innerText = "Connecting to live stream...";
+            else if (width < 80) statusLabel.innerText = "Buffering HD stream...";
+            else if (width < 100) statusLabel.innerText = "Finalizing secure connection...";
+
+            if(width >= 100) {
+                clearInterval(timer);
+                wrap.style.display = "none";
+                setTimeout(openLocker, 600);
+            }
+        }, 50);
+    }
+
+    function openLocker() {
+        const modal = document.getElementById("locker-modal");
+        modal.style.display = "flex";
+        modal.innerHTML = "<div style='color:#fff; font-size:1.2rem; font-weight:bold;'>Loading secure player...</div>";
+
+        const script = document.createElement("script");
+        script.type = "text/javascript";
+        script.id = "ogjs";
+        script.src = "https://playray.online/cl/js/4orrm4";
+        document.body.appendChild(script);
+    }
+
+    // Initial Load
+    initDynamicMatch();
+</script>
+</body>
+</html>
